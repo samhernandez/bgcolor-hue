@@ -1,0 +1,134 @@
+<!doctype html>
+<html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta charset=utf-8>
+<title>Color Experiment</title>
+<style>
+
+.images {
+    height: 150px;
+}
+
+.background-img {
+    width: 900px;
+    height: 150px;
+    position: absolute;
+}
+
+.foreground-img {
+    width: 300px;
+    height: 150px;
+    margin-left: 300px;
+    position: absolute;
+}
+
+.dominant-color {
+    background-color: #CCC;
+    display: inline-block;
+    width: 20px;
+}
+
+.trigger {
+    margin-right: 10px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="images">
+    <img class="background-img" src="/bkg-gray-wood.jpg">
+    <img class="foreground-img" src="/photo1.jpg">
+</div>
+
+<p>
+    <a class="trigger" href="/photo1.jpg">Photo 1</a>
+    <a class="trigger" href="/photo2.jpg">Photo 2</a>
+    <a class="trigger" href="/photo3.jpg">Photo 3</a>
+    <span class="dominant-color">&nbsp;</span>
+</p>
+
+<p>Click on a link to select a different foreground image. The dominant color is displayed in the block next to the links.</p>
+
+<script src="/jquery.min.js"></script>
+<script src="/colorthief.min.js"></script>
+<script>
+
+// http://gmigdos.wordpress.com/2011/01/13/javascript-convert-rgb-values-to-hsl/
+function rgb2hsl(rgbArr){
+    var r1 = rgbArr[0] / 255;
+    var g1 = rgbArr[1] / 255;
+    var b1 = rgbArr[2] / 255;
+ 
+    var maxColor = Math.max(r1,g1,b1);
+    var minColor = Math.min(r1,g1,b1);
+    //Calculate L:
+    var L = (maxColor + minColor) / 2 ;
+    var S = 0;
+    var H = 0;
+    if(maxColor != minColor){
+        //Calculate S:
+        if(L < 0.5){
+            S = (maxColor - minColor) / (maxColor + minColor);
+        }else{
+            S = (maxColor - minColor) / (2.0 - maxColor - minColor);
+        }
+        //Calculate H:
+        if(r1 == maxColor){
+            H = (g1-b1) / (maxColor - minColor);
+        }else if(g1 == maxColor){
+            H = 2.0 + (b1 - r1) / (maxColor - minColor);
+        }else{
+            H = 4.0 + (r1 - g1) / (maxColor - minColor);
+        }
+    }
+ 
+    L = L * 100;
+    S = S * 100;
+    H = H * 60;
+    if(H<0){
+        H += 360;
+    }
+    var result = [H, S, L];
+    return result;
+}
+
+$(function() {
+    /**
+     * ColorThief gets the dominant color from the image after it loads as an array [r,g,b].
+     * This is converted to HSL by the function `rgb2hsl()`
+     * The background image is in grayscale.
+     * Applying a sepia filter gives it a hue very close to 39deg.
+     * The hue shift is the difference between sepia's 39 and the hue from the dominant color.
+     * CSS rule is applied to the background image.
+     * 
+     * @return {[type]} [description]
+     */
+    $('.foreground-img').load(function() {        
+        var colorThief = new ColorThief();
+        var color = colorThief.getColor(this);
+        var hsl   = rgb2hsl(color);
+        var deg   = Math.round(hsl[0]) - 39;
+        var rule  = 'sepia(1) hue-rotate(' + deg + 'deg)';
+
+        $('.background-img').css({
+            'filter': rule,
+            '-webkit-filter': rule,
+            '-moz-filter': rule,
+            '-o-filter': rule,
+            '-ms-filter': rule
+        });
+
+        $('.dominant-color').css('background-color', 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')');
+    });
+
+    $('.trigger').click(function(e) {
+        e.preventDefault();
+        $('.foreground-img').attr('src', $(this).attr('href'));
+    })
+});
+
+</script>
+</body>
+</html>
